@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Josh Talks AI — Voice AI Research, Datasets & Evaluation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300;1,6..72,400&display=swap');
+
+:root {
+  --bg: #080808;
+  --surface: #111111;
+  --surface-2: #171717;
+  --border: #222222;
+  --border-mid: #2e2e2e;
+  --border-light: #1a1a1a;
+  --text-1: #f0ede8;
+  --text-2: #8c8984;
+  --text-3: #4a4845;
+  --accent: #c8a876;
+  --accent-2: rgba(200,168,118,0.12);
+  --accent-3: rgba(200,168,118,0.06);
+  --green: #4d9e72;
+  --green-2: rgba(77,158,114,0.12);
+  --red: #d95f5f;
+  --blue: #4a7fc4;
+  --blue-2: rgba(74,127,196,0.1);
+  --nav-h: 58px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ── UTILITIES ── */
+.mono { font-family: 'IBM Plex Mono', monospace; }
+.serif { font-family: 'Newsreader', serif; }
+.tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--accent);
+}
+.muted { color: var(--text-2); }
+.container { max-width: 1120px; margin: 0 auto; padding: 0 40px; }
+.divider { height: 1px; background: var(--border-light); }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  height: var(--nav-h);
+  background: rgba(8,8,8,.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light);
+}
+.nav-inner {
+  max-width: 1120px; margin: 0 auto; padding: 0 40px;
+  height: 100%; display: flex; align-items: center; gap: 0;
+}
+.nav-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-1); letter-spacing: .04em;
+  display: flex; align-items: center; gap: 8px;
+  margin-right: 40px; flex-shrink: 0;
+}
+.nav-logo-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+}
+.nav-links {
+  display: flex; align-items: center; gap: 28px;
+  flex: 1; list-style: none;
+}
+.nav-links a {
+  font-size: 13px; color: var(--text-2); letter-spacing: .01em;
+  transition: color .15s;
+}
+.nav-links a:hover { color: var(--text-1); }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.btn-ghost {
+  font-size: 13px; color: var(--text-2);
+  padding: 6px 14px; border: 1px solid var(--border-mid);
+  border-radius: 4px; cursor: pointer;
+  background: transparent; transition: border-color .15s, color .15s;
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: .04em;
+}
+.btn-ghost:hover { border-color: var(--text-3); color: var(--text-1); }
+.btn-primary {
+  font-size: 13px; font-weight: 500;
+  padding: 7px 16px; border-radius: 4px; cursor: pointer;
+  background: var(--accent); color: #0a0a0a;
+  border: none; font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: .04em; transition: opacity .15s;
+}
+.btn-primary:hover { opacity: .88; }
+
+/* ── LIVE BADGE ── */
+.live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--green);
+  background: var(--green-2); border: 1px solid rgba(77,158,114,.2);
+  border-radius: 20px; padding: 3px 10px;
+}
+.live-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 96px 0 80px;
+  border-bottom: 1px solid var(--border-light);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,168,118,.15), transparent);
+}
+.hero-inner {
+  max-width: 1120px; margin: 0 auto; padding: 0 40px;
+  display: grid; grid-template-columns: 1fr 420px; gap: 80px;
+  align-items: start;
+}
+.hero-eyebrow { margin-bottom: 24px; }
+h1 {
+  font-family: 'Newsreader', serif;
+  font-size: clamp(34px, 4.5vw, 52px);
+  font-weight: 300; line-height: 1.15;
+  letter-spacing: -.02em; color: var(--text-1);
+  margin-bottom: 24px;
+}
+h1 em { font-style: italic; color: var(--accent); }
+.hero-sub {
+  font-size: 16px; font-weight: 300;
+  color: var(--text-2); line-height: 1.7;
+  max-width: 480px; margin-bottom: 36px;
+}
+.hero-ctas { display: flex; gap: 12px; align-items: center; }
+.btn-hero {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 600; letter-spacing: .08em;
+  padding: 10px 22px; border-radius: 3px; cursor: pointer;
+  text-transform: uppercase; transition: opacity .15s;
+}
+.btn-hero-primary {
+  background: var(--accent); color: #0a0a0a; border: none;
+}
+.btn-hero-primary:hover { opacity: .88; }
+.btn-hero-secondary {
+  background: transparent; color: var(--text-2);
+  border: 1px solid var(--border-mid);
+}
+.btn-hero-secondary:hover { border-color: var(--text-3); color: var(--text-1); }
+.hero-stat-text {
+  font-size: 12px; color: var(--text-3);
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: .04em;
+  margin-top: 24px;
+}
+
+/* Hero right: mini leaderboard */
+.hero-board {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden;
+}
+.hero-board-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.hero-board-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-2);
+}
+.hero-board-body { padding: 0; }
+.board-row {
+  display: grid; grid-template-columns: 28px 1fr 56px 44px;
+  align-items: center; gap: 0;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border-light);
+  transition: background .1s;
+}
+.board-row:last-child { border-bottom: none; }
+.board-row:hover { background: rgba(255,255,255,.02); }
+.board-rank {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-3); font-weight: 500;
+}
+.board-rank.gold { color: var(--accent); }
+.board-model { font-size: 12px; font-weight: 400; color: var(--text-1); }
+.board-org { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+.board-wr {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 600; text-align: right;
+}
+.board-wr.top { color: var(--green); }
+.board-wr.mid { color: var(--text-2); }
+.board-wr.low { color: var(--red); }
+.board-bar-wrap {
+  width: 32px; height: 3px;
+  background: rgba(255,255,255,.06); border-radius: 2px;
+  overflow: hidden; margin-left: auto;
+}
+.board-bar { height: 100%; border-radius: 2px; background: var(--green); }
+.board-footer {
+  padding: 10px 18px;
+  border-top: 1px solid var(--border-light);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-3); letter-spacing: .06em;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.board-footer a { color: var(--accent); letter-spacing: .06em; }
+
+/* ── PROOF STRIP ── */
+.proof-strip {
+  padding: 32px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.proof-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-3);
+  letter-spacing: .12em; text-transform: uppercase;
+  margin-right: 32px; flex-shrink: 0;
+}
+.proof-inner {
+  max-width: 1120px; margin: 0 auto; padding: 0 40px;
+  display: flex; align-items: center; gap: 0;
+}
+.proof-logos {
+  display: flex; align-items: center; gap: 40px; flex-wrap: wrap;
+}
+.proof-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-3); letter-spacing: .08em;
+  opacity: .6; transition: opacity .15s;
+}
+.proof-logo:hover { opacity: 1; }
+
+/* ── SECTION HEADER ── */
+.section-header { margin-bottom: 48px; }
+.section-header h2 {
+  font-family: 'Newsreader', serif;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 300; line-height: 1.2;
+  letter-spacing: -.01em; color: var(--text-1);
+  margin-top: 12px; margin-bottom: 12px;
+}
+.section-header p { font-size: 15px; color: var(--text-2); max-width: 500px; font-weight: 300; }
+
+/* ── PRODUCTS SECTION ── */
+.products { padding: 80px 0; border-bottom: 1px solid var(--border-light); }
+.products-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+}
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 32px; position: relative;
+  transition: border-color .2s;
+}
+.product-card:hover { border-color: var(--border-mid); }
+.product-card.featured { border-color: rgba(200,168,118,.2); }
+.product-card.featured::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+.product-icon {
+  width: 36px; height: 36px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+  color: var(--accent);
+}
+.product-title {
+  font-size: 16px; font-weight: 500; color: var(--text-1);
+  margin-bottom: 8px; letter-spacing: -.01em;
+}
+.product-desc {
+  font-size: 13px; color: var(--text-2); line-height: 1.65;
+  font-weight: 300; margin-bottom: 20px;
+}
+.product-stat {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 20px;
+}
+.product-stat-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 24px; font-weight: 600; color: var(--accent);
+  letter-spacing: -.02em;
+}
+.product-stat-label {
+  font-size: 11px; color: var(--text-3); line-height: 1.3;
+}
+.product-link {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--accent);
+  display: flex; align-items: center; gap: 6px;
+  transition: gap .15s;
+}
+.product-link:hover { gap: 10px; }
+.product-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.product-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; font-weight: 500; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-3);
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: 3px 8px; border-radius: 2px;
+}
+
+/* ── METHODOLOGY ── */
+.methodology {
+  padding: 80px 0; border-bottom: 1px solid var(--border-light);
+  background: var(--surface);
+}
+.method-inner {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+  align-items: start;
+}
+.method-steps { display: flex; flex-direction: column; gap: 0; }
+.method-step {
+  display: flex; gap: 20px; padding: 20px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.method-step:last-child { border-bottom: none; }
+.method-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: .08em;
+  color: var(--text-3); flex-shrink: 0; padding-top: 2px;
+}
+.method-content {}
+.method-title { font-size: 14px; font-weight: 500; color: var(--text-1); margin-bottom: 4px; }
+.method-desc { font-size: 13px; color: var(--text-2); font-weight: 300; line-height: 1.6; }
+.method-stat-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 32px;
+}
+.method-stat-cell {
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: 20px;
+}
+.method-stat-cell-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 26px; font-weight: 600; color: var(--text-1);
+  letter-spacing: -.02em; margin-bottom: 4px;
+}
+.method-stat-cell-label { font-size: 12px; color: var(--text-2); font-weight: 300; }
+.method-note {
+  font-size: 12px; color: var(--text-3);
+  font-family: 'IBM Plex Mono', monospace;
+  line-height: 1.6; letter-spacing: .02em;
+}
+
+/* ── LEADERBOARD PREVIEW ── */
+.leaderboard-section { padding: 80px 0; border-bottom: 1px solid var(--border-light); }
+.lb-controls {
+  display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap;
+}
+.lb-filter {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; padding: 6px 14px;
+  border: 1px solid var(--border-mid); border-radius: 2px;
+  background: transparent; color: var(--text-3);
+  cursor: pointer; transition: all .15s;
+}
+.lb-filter.active {
+  background: var(--accent-2); border-color: rgba(200,168,118,.3);
+  color: var(--accent);
+}
+.lb-filter:hover:not(.active) { color: var(--text-2); border-color: var(--text-3); }
+.lb-table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 4px; overflow: hidden;
+}
+.lb-table { width: 100%; border-collapse: collapse; }
+.lb-thead tr {
+  background: var(--surface-2); border-bottom: 1px solid var(--border-light);
+}
+.lb-thead th {
+  padding: 10px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-3);
+  text-align: left; white-space: nowrap;
+}
+.lb-thead th:not(:first-child):not(:nth-child(2)) { text-align: right; }
+.lb-tbody tr {
+  border-bottom: 1px solid var(--border-light); transition: background .1s;
+}
+.lb-tbody tr:last-child { border-bottom: none; }
+.lb-tbody tr:hover { background: rgba(255,255,255,.015); }
+.lb-tbody td { padding: 12px 16px; font-size: 13px; }
+.lb-rank {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 600; color: var(--text-3); text-align: center;
+}
+.lb-rank-1 { color: var(--accent); }
+.lb-rank-2 { color: var(--text-2); }
+.lb-model-name { font-weight: 500; color: var(--text-1); }
+.lb-model-org { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+.lb-wr { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: right; }
+.lb-wr-high { color: var(--green); font-weight: 600; }
+.lb-wr-mid { color: var(--text-2); }
+.lb-wr-low { color: var(--red); }
+.lb-cell { text-align: right; }
+.lb-defect {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-3); text-align: right;
+}
+.lb-pill {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: .08em;
+  padding: 2px 7px; border-radius: 10px;
+  font-weight: 600; text-transform: uppercase;
+}
+.lb-pill-green { background: var(--green-2); color: var(--green); }
+.lb-pill-red { background: rgba(217,95,95,.1); color: var(--red); }
+.lb-footer {
+  padding: 12px 16px; border-top: 1px solid var(--border-light);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.lb-footer-stat {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-3); letter-spacing: .06em;
+}
+.lb-footer-link {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--accent);
+}
+
+/* ── RESEARCH / INSIGHTS ── */
+.insights { padding: 80px 0; border-bottom: 1px solid var(--border-light); }
+.insights-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2px; }
+.insight-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 28px; display: flex; flex-direction: column;
+  transition: border-color .2s;
+}
+.insight-card:hover { border-color: var(--border-mid); }
+.insight-card.featured { padding: 36px; }
+.insight-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-3);
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.insight-eyebrow-new {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  background: var(--accent-2); color: var(--accent);
+  border: 1px solid rgba(200,168,118,.2);
+  padding: 2px 7px; border-radius: 2px;
+}
+.insight-title {
+  font-family: 'Newsreader', serif;
+  font-size: 18px; font-weight: 400; line-height: 1.3;
+  color: var(--text-1); margin-bottom: 12px; letter-spacing: -.01em;
+  flex: 1;
+}
+.insight-card.featured .insight-title { font-size: 22px; }
+.insight-title em { font-style: italic; color: var(--accent); }
+.insight-excerpt {
+  font-size: 13px; color: var(--text-2); line-height: 1.65;
+  font-weight: 300; margin-bottom: 20px;
+}
+.insight-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-3); letter-spacing: .06em;
+  margin-top: auto;
+}
+.insight-stat {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 2px; padding: 10px 14px;
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 16px;
+}
+.insight-stat-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px; font-weight: 600; color: var(--accent);
+}
+.insight-stat-label { font-size: 11px; color: var(--text-3); }
+
+/* ── DATASETS ── */
+.datasets { padding: 80px 0; border-bottom: 1px solid var(--border-light); }
+.datasets-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+.datasets-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 28px; }
+.ds-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 20px 22px;
+}
+.ds-stat-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 28px; font-weight: 600; color: var(--text-1);
+  letter-spacing: -.02em; margin-bottom: 4px;
+}
+.ds-stat-label { font-size: 12px; color: var(--text-2); font-weight: 300; }
+.datasets-list { display: flex; flex-direction: column; gap: 0; }
+.ds-item {
+  display: flex; gap: 16px; padding: 16px 0;
+  border-bottom: 1px solid var(--border-light); align-items: start;
+}
+.ds-item:last-child { border-bottom: none; }
+.ds-item-icon {
+  width: 28px; height: 28px; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--text-3);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.ds-item-title { font-size: 13px; font-weight: 500; color: var(--text-1); margin-bottom: 2px; }
+.ds-item-desc { font-size: 12px; color: var(--text-2); font-weight: 300; }
+
+/* ── FOOTER ── */
+footer {
+  padding: 56px 0 40px;
+  border-top: 1px solid var(--border-light);
+}
+.footer-inner {
+  max-width: 1120px; margin: 0 auto; padding: 0 40px;
+}
+.footer-top {
+  display: grid; grid-template-columns: 240px 1fr 1fr 1fr;
+  gap: 60px; margin-bottom: 48px;
+}
+.footer-brand {}
+.footer-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px; font-weight: 600; color: var(--text-1);
+  letter-spacing: .04em; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.footer-tagline { font-size: 12px; color: var(--text-3); line-height: 1.6; font-weight: 300; }
+.footer-col-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-3); margin-bottom: 16px;
+}
+.footer-links-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer-links-list a { font-size: 13px; color: var(--text-2); transition: color .15s; font-weight: 300; }
+.footer-links-list a:hover { color: var(--text-1); }
+.footer-bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 24px; border-top: 1px solid var(--border-light);
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-copy {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-3); letter-spacing: .06em;
+}
+.footer-legal { display: flex; gap: 20px; }
+.footer-legal a {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-3); letter-spacing: .06em;
+  transition: color .15s;
+}
+.footer-legal a:hover { color: var(--text-2); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+  .products-grid { grid-template-columns: 1fr; }
+  .method-inner { grid-template-columns: 1fr; gap: 40px; }
+  .insights-grid { grid-template-columns: 1fr; }
+  .datasets-inner { grid-template-columns: 1fr; gap: 40px; }
+  .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .container, .nav-inner, .proof-inner, .footer-inner { padding: 0 20px; }
+  .hero-inner { padding: 0 20px; }
+  h1 { font-size: 30px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <span class="nav-logo-dot"></span>
+      Josh Talks AI
+    </a>
+    <ul class="nav-links">
+      <li><a href="#">VoiceArena</a></li>
+      <li><a href="#">Datasets</a></li>
+      <li><a href="#">Research</a></li>
+      <li><a href="#">Methodology</a></li>
+      <li><a href="#">Voice of India</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="btn-ghost">Sign in</button>
+      <button class="btn-primary">Contact Us</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-eyebrow">
+        <span class="live-badge">
+          <span class="live-dot"></span>
+          Live evaluation
+        </span>
+      </div>
+      <h1>The <em>measurement layer</em><br>for voice AI.</h1>
+      <p class="hero-sub">
+        Research-grade datasets, human evaluation, and open benchmarks for model builders at frontier AI labs. Built for the teams training and shipping voice models at scale.
+      </p>
+      <div class="hero-ctas">
+        <a href="https://voicearena.com" class="btn-hero btn-hero-primary">View Leaderboard</a>
+        <a href="#" class="btn-hero btn-hero-secondary">Explore Datasets</a>
+      </div>
+      <p class="hero-stat-text mono">44,387 human votes · 857 native-language evaluators · 9 models · 6 languages</p>
+    </div>
+
+    <!-- Mini leaderboard -->
+    <div class="hero-right">
+      <div class="hero-board">
+        <div class="hero-board-header">
+          <span class="hero-board-title">TTS Arena — Global Win Rate</span>
+          <span class="live-badge" style="padding:2px 8px;font-size:9px">
+            <span class="live-dot"></span> Live
+          </span>
+        </div>
+        <div class="hero-board-body">
+          <div class="board-row">
+            <span class="board-rank gold">#1</span>
+            <div>
+              <div class="board-model">Gemini 3.1 Flash TTS</div>
+              <div class="board-org">Google DeepMind</div>
+            </div>
+            <span class="board-wr top">86.9%</span>
+            <div class="board-bar-wrap"><div class="board-bar" style="width:100%;background:var(--green)"></div></div>
+          </div>
+          <div class="board-row">
+            <span class="board-rank" style="color:var(--text-2)">#2</span>
+            <div>
+              <div class="board-model">Eleven v3</div>
+              <div class="board-org">ElevenLabs</div>
+            </div>
+            <span class="board-wr mid">71.1%</span>
+            <div class="board-bar-wrap"><div class="board-bar" style="width:82%;background:#7ecba0"></div></div>
+          </div>
+          <div class="board-row">
+            <span class="board-rank">#3</span>
+            <div>
+              <div class="board-model">Bulbul-V3</div>
+              <div class="board-org">Sarvam AI</div>
+            </div>
+            <span class="board-wr mid">53.1%</span>
+            <div class="board-bar-wrap"><div class="board-bar" style="width:61%;background:var(--text-3)"></div></div>
+          </div>
+          <div class="board-row">
+            <span class="board-rank">#4</span>
+            <div>
+              <div class="board-model">Sonic-3</div>
+              <div class="board-org">Cartesia</div>
+            </div>
+            <span class="board-wr mid">40.3%</span>
+            <div class="board-bar-wrap"><div class="board-bar" style="width:46%;background:var(--text-3)"></div></div>
+          </div>
+          <div class="board-row">
+            <span class="board-rank">#5</span>
+            <div>
+              <div class="board-model">gpt-4o-mini-tts</div>
+              <div class="board-org">OpenAI</div>
+            </div>
+            <span class="board-wr mid">39.7%</span>
+            <div class="board-bar-wrap"><div class="board-bar" style="width:46%;background:var(--text-3)"></div></div>
+          </div>
+          <div class="board-row">
+            <span class="board-rank">#6</span>
+            <div>
+              <div class="board-model">Azure Dragon HD</div>
+              <div class="board-org">Microsoft</div>
+            </div>
+            <span class="board-wr low">30.8%</span>
+            <div class="board-bar-wrap"><div class="board-bar" style="width:35%;background:var(--red)"></div></div>
+          </div>
+        </div>
+        <div class="board-footer">
+          <span>6 languages · ties excluded</span>
+          <a href="https://voicearena.com">Full leaderboard →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF STRIP -->
+<div class="proof-strip">
+  <div class="proof-inner">
+    <span class="proof-label">Trusted by</span>
+    <div class="proof-logos">
+      <span class="proof-logo">OpenAI</span>
+      <span class="proof-logo">Meta</span>
+      <span class="proof-logo">Google</span>
+      <span class="proof-logo">Amazon</span>
+      <span class="proof-logo">WhatsApp</span>
+      <span class="proof-logo">Spotify</span>
+      <span class="proof-logo">United Nations</span>
+      <span class="proof-logo">Bill &amp; Melinda Gates Foundation</span>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCTS -->
+<section class="products">
+  <div class="container">
+    <div class="section-header">
+      <div class="tag">Products</div>
+      <h2>Three pillars of voice AI infrastructure</h2>
+      <p>Evaluation, datasets, and research — built to the standard frontier AI labs need.</p>
+    </div>
+    <div class="products-grid">
+      <!-- VoiceArena -->
+      <div class="product-card featured">
+        <div class="product-icon">VA</div>
+        <div class="product-tags">
+          <span class="product-tag">Benchmark</span>
+          <span class="product-tag">Live</span>
+          <span class="product-tag">Open</span>
+        </div>
+        <div class="product-title">VoiceArena</div>
+        <div class="product-desc">Pairwise TTS evaluation by native-language human evaluators. Real-time leaderboard covering 9 frontier models across 6 languages with structured defect taxonomy and written evaluator comments.</div>
+        <div class="product-stat">
+          <span class="product-stat-num">44,387</span>
+          <span class="product-stat-label">human preference votes<br>collected May 2026</span>
+        </div>
+        <a href="https://voicearena.com" class="product-link">
+          Open leaderboard <span>→</span>
+        </a>
+      </div>
+
+      <!-- ASR Datasets -->
+      <div class="product-card">
+        <div class="product-icon">DS</div>
+        <div class="product-tags">
+          <span class="product-tag">Datasets</span>
+          <span class="product-tag">ASR</span>
+          <span class="product-tag">Indian languages</span>
+        </div>
+        <div class="product-title">ASR Datasets</div>
+        <div class="product-desc">Research-grade conversational and multi-speaker voice datasets across Indian languages, accents, and real contexts. Five-level human annotation with automated anomaly detection.</div>
+        <div class="product-stat">
+          <span class="product-stat-num">10M+</span>
+          <span class="product-stat-label">hours of voice data<br>production capacity per year</span>
+        </div>
+        <a href="#" class="product-link">
+          Explore catalogue <span>→</span>
+        </a>
+      </div>
+
+      <!-- Human-1 -->
+      <div class="product-card">
+        <div class="product-icon">H1</div>
+        <div class="product-tags">
+          <span class="product-tag">Research</span>
+          <span class="product-tag">Evaluation</span>
+        </div>
+        <div class="product-title">Human-1</div>
+        <div class="product-desc">A large-scale human evaluation framework for voice AI. Structured, replicable, and designed for the annotation quality standards that AI lab research requires.</div>
+        <div class="product-stat">
+          <span class="product-stat-num">5-tier</span>
+          <span class="product-stat-label">annotation quality framework<br>with anomaly detection</span>
+        </div>
+        <a href="#" class="product-link">
+          Read research <span>→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METHODOLOGY -->
+<section class="methodology">
+  <div class="container">
+    <div class="method-inner">
+      <div>
+        <div class="tag" style="margin-bottom:12px">Evaluation design</div>
+        <h2 style="font-family:'Newsreader',serif;font-size:clamp(24px,3vw,32px);font-weight:300;line-height:1.2;letter-spacing:-.01em;margin-bottom:16px;margin-top:0">How VoiceArena measures<br>what matters</h2>
+        <p style="font-size:14px;color:var(--text-2);font-weight:300;line-height:1.7;margin-bottom:28px">
+          VoiceArena uses pairwise preference evaluation — the same methodology proven by Chatbot Arena for LLM evaluation — adapted for audio. A human evaluator listens to two model outputs for the same input and selects the better one. Evaluators are native speakers of the target language, not English-speaking annotators.
+        </p>
+        <div class="method-stat-grid">
+          <div class="method-stat-cell">
+            <div class="method-stat-cell-num">857</div>
+            <div class="method-stat-cell-label">Native-language evaluators</div>
+          </div>
+          <div class="method-stat-cell">
+            <div class="method-stat-cell-num">6</div>
+            <div class="method-stat-cell-label">Languages evaluated</div>
+          </div>
+          <div class="method-stat-cell">
+            <div class="method-stat-cell-num">49%</div>
+            <div class="method-stat-cell-label">Votes with written comment</div>
+          </div>
+          <div class="method-stat-cell">
+            <div class="method-stat-cell-num">7</div>
+            <div class="method-stat-cell-label">Structured defect categories</div>
+          </div>
+        </div>
+        <p class="method-note">
+          Full methodology: voicearena.com/tts-methodology
+        </p>
+      </div>
+
+      <div class="method-steps">
+        <div class="method-step">
+          <span class="method-num">01</span>
+          <div class="method-content">
+            <div class="method-title">Same input, two models</div>
+            <div class="method-desc">A single sentence is synthesized by two TTS models. The evaluator does not know which model produced which output.</div>
+          </div>
+        </div>
+        <div class="method-step">
+          <span class="method-num">02</span>
+          <div class="method-content">
+            <div class="method-title">Native-language evaluator listens</div>
+            <div class="method-desc">A native speaker of the target language — not a general annotator — evaluates both outputs. This surfaces failure modes invisible to non-native listeners.</div>
+          </div>
+        </div>
+        <div class="method-step">
+          <span class="method-num">03</span>
+          <div class="method-content">
+            <div class="method-title">Structured defect tagging</div>
+            <div class="method-desc">Evaluators tag specific failure types: mispronunciation, robotic voice, irregular pacing, hallucination, missing word, noise. Granular enough to diagnose, not just rank.</div>
+          </div>
+        </div>
+        <div class="method-step">
+          <span class="method-num">04</span>
+          <div class="method-content">
+            <div class="method-title">Written comment (optional)</div>
+            <div class="method-desc">Evaluators explain what they heard. 49% of votes include a written comment — the primary source for failure pattern analysis.</div>
+          </div>
+        </div>
+        <div class="method-step">
+          <span class="method-num">05</span>
+          <div class="method-content">
+            <div class="method-title">Aggregated into win rates</div>
+            <div class="method-desc">Wins are counted per language, per content category. Ties excluded from win rate calculations. Results published continuously.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LEADERBOARD PREVIEW -->
+<section class="leaderboard-section">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:32px;flex-wrap:wrap;gap:16px">
+      <div>
+        <div class="tag" style="margin-bottom:10px">Live leaderboard</div>
+        <h2 style="font-family:'Newsreader',serif;font-size:clamp(22px,2.8vw,30px);font-weight:300;line-height:1.2;letter-spacing:-.01em;margin:0">TTS Model Rankings — May 2026</h2>
+      </div>
+      <a href="https://voicearena.com" class="product-link">Full leaderboard →</a>
+    </div>
+
+    <div class="lb-controls">
+      <button class="lb-filter active">All languages</button>
+      <button class="lb-filter">en-US</button>
+      <button class="lb-filter">hi-IN</button>
+      <button class="lb-filter">ar-MSA</button>
+      <button class="lb-filter">ja-JP</button>
+      <button class="lb-filter">pt-BR</button>
+      <button class="lb-filter">vi-VN</button>
+    </div>
+
+    <div class="lb-table-wrap">
+      <table class="lb-table">
+        <thead class="lb-thead">
+          <tr>
+            <th style="width:48px">Rank</th>
+            <th>Model</th>
+            <th style="text-align:right">Win rate</th>
+            <th style="text-align:right">Wins</th>
+            <th style="text-align:right">Losses</th>
+            <th style="text-align:right">Ties</th>
+            <th style="text-align:right">Defect rate</th>
+            <th style="text-align:right">Status</th>
+          </tr>
+        </thead>
+        <tbody class="lb-tbody">
+          <tr>
+            <td class="lb-rank lb-rank-1">#1</td>
+            <td><div class="lb-model-name">Gemini 3.1 Flash TTS</div><div class="lb-model-org">Google DeepMind</div></td>
+            <td class="lb-wr lb-wr-high">86.9%</td>
+            <td class="lb-cell muted mono" style="font-size:12px">6,851</td>
+            <td class="lb-cell muted mono" style="font-size:12px">1,031</td>
+            <td class="lb-cell muted mono" style="font-size:12px">4,855</td>
+            <td class="lb-defect">20.9%</td>
+            <td class="lb-cell"><span class="lb-pill lb-pill-green">Dominant</span></td>
+          </tr>
+          <tr>
+            <td class="lb-rank lb-rank-2">#2</td>
+            <td><div class="lb-model-name">Eleven v3</div><div class="lb-model-org">ElevenLabs</div></td>
+            <td class="lb-wr lb-wr-mid">71.1%</td>
+            <td class="lb-cell muted mono" style="font-size:12px">5,300</td>
+            <td class="lb-cell muted mono" style="font-size:12px">2,156</td>
+            <td class="lb-cell muted mono" style="font-size:12px">5,284</td>
+            <td class="lb-defect">35.8%</td>
+            <td class="lb-cell"><span class="lb-pill lb-pill-green">Strong</span></td>
+          </tr>
+          <tr>
+            <td class="lb-rank">#3</td>
+            <td><div class="lb-model-name">gpt-4o-mini-tts</div><div class="lb-model-org">OpenAI</div></td>
+            <td class="lb-wr lb-wr-mid">39.7%</td>
+            <td class="lb-cell muted mono" style="font-size:12px">3,025</td>
+            <td class="lb-cell muted mono" style="font-size:12px">4,597</td>
+            <td class="lb-cell muted mono" style="font-size:12px">5,070</td>
+            <td class="lb-defect">55.5%</td>
+            <td class="lb-cell"><span class="lb-pill" style="background:rgba(255,255,255,.05);color:var(--text-3)">Mid-tier</span></td>
+          </tr>
+          <tr>
+            <td class="lb-rank">#4</td>
+            <td><div class="lb-model-name">Sonic-3</div><div class="lb-model-org">Cartesia</div></td>
+            <td class="lb-wr lb-wr-mid">40.3%</td>
+            <td class="lb-cell muted mono" style="font-size:12px">3,192</td>
+            <td class="lb-cell muted mono" style="font-size:12px">4,720</td>
+            <td class="lb-cell muted mono" style="font-size:12px">4,947</td>
+            <td class="lb-defect">57.0%</td>
+            <td class="lb-cell"><span class="lb-pill" style="background:rgba(255,255,255,.05);color:var(--text-3)">Mid-tier</span></td>
+          </tr>
+          <tr>
+            <td class="lb-rank">#5</td>
+            <td><div class="lb-model-name">Grok TTS</div><div class="lb-model-org">xAI</div></td>
+            <td class="lb-wr lb-wr-mid">37.6%</td>
+            <td class="lb-cell muted mono" style="font-size:12px">2,775</td>
+            <td class="lb-cell muted mono" style="font-size:12px">4,611</td>
+            <td class="lb-cell muted mono" style="font-size:12px">5,280</td>
+            <td class="lb-defect">57.3%</td>
+            <td class="lb-cell"><span class="lb-pill lb-pill-red">Halluc. risk</span></td>
+          </tr>
+          <tr>
+            <td class="lb-rank">#6</td>
+            <td><div class="lb-model-name">Azure Dragon HD Omni</div><div class="lb-model-org">Microsoft</div></td>
+            <td class="lb-wr lb-wr-low">30.8%</td>
+            <td class="lb-cell muted mono" style="font-size:12px">2,360</td>
+            <td class="lb-cell muted mono" style="font-size:12px">5,303</td>
+            <td class="lb-cell muted mono" style="font-size:12px">5,005</td>
+            <td class="lb-defect">63.1%</td>
+            <td class="lb-cell"><span class="lb-pill lb-pill-red">Underperforms</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="lb-footer">
+        <span class="lb-footer-stat">44,387 votes · 857 native evaluators · ties excluded from win rate · Apr 30–May 4 2026</span>
+        <a href="https://voicearena.com" class="lb-footer-link">Full leaderboard with language breakdown →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESEARCH INSIGHTS -->
+<section class="insights">
+  <div class="container">
+    <div class="section-header">
+      <div class="tag">Research &amp; Insights</div>
+      <h2>What the evaluation data reveals</h2>
+      <p>Benchmark analyses and findings from VoiceArena's evaluation work.</p>
+    </div>
+    <div class="insights-grid">
+      <div class="insight-card featured">
+        <div class="insight-eyebrow">
+          Benchmark Analysis
+          <span class="insight-eyebrow-new">New</span>
+        </div>
+        <div class="insight-stat">
+          <span class="insight-stat-num">23%</span>
+          <span class="insight-stat-label">Grok TTS hallucination rate on numeric sentences in Arabic</span>
+        </div>
+        <div class="insight-title">Your TTS Model Passes English Benchmarks.<br><em>It May Be Changing Facts in Arabic.</em></div>
+        <div class="insight-excerpt">44,387 human votes across 6 languages reveal that multilingual voice AI fails along a specific fault line — and the consequences extend beyond voice quality into factual accuracy.</div>
+        <div class="insight-meta">May 2026 · 16 min read · 9 models evaluated</div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-eyebrow">Methodology</div>
+        <div class="insight-title">Why pairwise evaluation by native speakers catches what MOS misses</div>
+        <div class="insight-excerpt">Automated metrics measure pronunciation and naturalness. They do not detect factual substitution.</div>
+        <div class="insight-meta" style="margin-top:auto">May 2026 · 8 min read</div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-eyebrow">Data</div>
+        <div class="insight-title">The language-collapse problem in multilingual TTS</div>
+        <div class="insight-excerpt">A model ranked second in English may rank last in Japanese. Aggregate leaderboards conceal 30-point rank inversions.</div>
+        <div class="insight-meta" style="margin-top:auto">May 2026 · 6 min read</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATASETS -->
+<section class="datasets">
+  <div class="container">
+    <div class="datasets-inner">
+      <div>
+        <div class="tag" style="margin-bottom:12px">ASR Datasets</div>
+        <h2 style="font-family:'Newsreader',serif;font-size:clamp(22px,2.8vw,30px);font-weight:300;line-height:1.2;letter-spacing:-.01em;margin-bottom:16px;margin-top:0">Research-grade voice data<br>from the ground up</h2>
+        <p style="font-size:14px;color:var(--text-2);font-weight:300;line-height:1.7;margin-bottom:24px">
+          Collected from real speakers across Indian states, socioeconomic tiers, and dialect regions. Five-level human annotation with automated anomaly detection keeps label error rates low enough for frontier model training.
+        </p>
+        <div class="datasets-stats">
+          <div class="ds-stat">
+            <div class="ds-stat-num">10M+</div>
+            <div class="ds-stat-label">Hours/year production capacity</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-num">12+</div>
+            <div class="ds-stat-label">Indian languages covered</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-num">5-tier</div>
+            <div class="ds-stat-label">Human annotation quality</div>
+          </div>
+          <div class="ds-stat">
+            <div class="ds-stat-num">ISO</div>
+            <div class="ds-stat-label">27001-aligned cloud practices</div>
+          </div>
+        </div>
+        <a href="#" class="product-link">Explore dataset catalogue →</a>
+      </div>
+
+      <div class="datasets-list">
+        <div class="ds-item">
+          <div class="ds-item-icon">ML</div>
+          <div>
+            <div class="ds-item-title">Multi-lingual Datasets</div>
+            <div class="ds-item-desc">English, Hindi, Tamil, Marathi, Telugu, Bangla, Kannada, Malayalam, Punjabi, Oriya, Gujarati, Assamese and more. Code-switching and low-resource dialect variants included.</div>
+          </div>
+        </div>
+        <div class="ds-item">
+          <div class="ds-item-icon">MS</div>
+          <div>
+            <div class="ds-item-title">Multi-Speaker Conversational</div>
+            <div class="ds-item-desc">Spontaneous dialogues with diarized stems for up to 16 speakers. Multi-speaker debate datasets. Channel-separated audio.</div>
+          </div>
+        </div>
+        <div class="ds-item">
+          <div class="ds-item-icon">EM</div>
+          <div>
+            <div class="ds-item-title">Emotion-Rich Data</div>
+            <div class="ds-item-desc">Nine emotion categories — Neutral, Angry, Happy, Sad, Fear, Anxious, Surprised, Confused, Excited — with annotation labels.</div>
+          </div>
+        </div>
+        <div class="ds-item">
+          <div class="ds-item-icon">SP</div>
+          <div>
+            <div class="ds-item-title">Specialised Datasets</div>
+            <div class="ds-item-desc">Noisy environment, privacy-preserving, accessibility, and child speech datasets. Consent-compliant with PII redaction.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span class="nav-logo-dot"></span>
+          Josh Talks AI
+        </div>
+        <p class="footer-tagline">Voice AI research, datasets, and evaluation infrastructure. Part of the Josh Talks Group.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Evaluation</div>
+        <ul class="footer-links-list">
+          <li><a href="https://voicearena.com">VoiceArena Leaderboard</a></li>
+          <li><a href="https://voicearena.com/vote">Participate in Evaluation</a></li>
+          <li><a href="https://voicearena.com/tts-methodology">Methodology</a></li>
+          <li><a href="#">Research &amp; Insights</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Datasets</div>
+        <ul class="footer-links-list">
+          <li><a href="#">Dataset Catalogue</a></li>
+          <li><a href="#">Voice of India</a></li>
+          <li><a href="#">Human-1</a></li>
+          <li><a href="#">Data Quality Framework</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links-list">
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="#">Newsletter</a></li>
+          <li><a href="https://joshtalks.com">Josh Talks Group</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2026 Josh Talks AI · Part of the Josh Talks Group</span>
+      <div class="footer-legal">
+        <a href="#">Terms &amp; Conditions</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Community Guidelines</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('.lb-filter').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lb-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
